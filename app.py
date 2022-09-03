@@ -1,3 +1,4 @@
+from time import strftime
 import pytz
 from datetime import datetime
 from secrets import token_urlsafe
@@ -6,6 +7,7 @@ from flask_bootstrap import Bootstrap
 from faunadb import query as q
 from faunadb.objects import Ref
 from faunadb.client import FaunaClient
+import datetime
 
 app = Flask(__name__)
 Bootstrap(app)
@@ -17,14 +19,15 @@ def index():
     if request.method == "POST":
         title = request.form.get("title").strip()
         paste_text = request.form.get("paste-text").strip()
-
+        date = datetime.datetime.now()
         identifier = token_urlsafe(5)
         paste = client.query(q.create(q.collection("pastes"), {
             "data": {
                 "identifier": identifier,
                 "paste_text": paste_text,
                 "title": title,
-                "date": datetime.now(pytz.UTC)
+                "date": date.strftime("%d %b %Y"),
+                "time": date.strftime("%H:%M:%S")
             }
         }))
 
@@ -36,7 +39,7 @@ def index():
 def render_paste(paste_id):
     try:
         paste = client.query(
-            q.get(q.match(q.index("paste_by_identifier"), paste_id)))
+            q.get(q.match(q.index("identifier"), paste_id)))
     except:
         abort(404)
 
